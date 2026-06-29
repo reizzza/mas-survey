@@ -1,0 +1,12 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# /admin 도, 그 외 모든 경로도 SPA 진입점으로 rewrite (주소 유지).
+# 실제 화면 분기는 src/main.jsx 가 pathname 으로 처리.
+# (함수 경로 /.netlify/functions/* 는 Netlify 가 먼저 가로채므로 영향 없음)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
