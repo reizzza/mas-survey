@@ -64,9 +64,9 @@ function flatten(participantId, step, data) {
   return row;
 }
 
-let _sheet = null;
+/* 캐싱하지 않는다. 함수 인스턴스가 살아있는 동안 옛 헤더를 기억해버리면
+ * 시트를 비워도 새 헤더가 생성되지 않아 데이터가 어긋난다. */
 async function getSheet() {
-  if (_sheet) return _sheet;
   const auth = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     key: (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
@@ -75,12 +75,20 @@ async function getSheet() {
   const doc = new GoogleSpreadsheet(process.env.SHEET_ID, auth);
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
+
+  // 현재 헤더가 기대 구조를 모두 담고 있는지 확인하고, 아니면 새로 세운다.
+  let ok = false;
   try {
     await sheet.loadHeaderRow();
+    const cur = sheet.headerValues || [];
+    ok = cur.length > 0 && HEADERS.every((h) => cur.includes(h));
   } catch {
-    await sheet.setHeaderRow(HEADERS);
+    ok = false; // 빈 시트 등
   }
-  _sheet = sheet;
+  if (!ok) {
+    await sheet.setHeaderRow(HEADERS);
+    await sheet.loadHeaderRow();
+  }
   return sheet;
 }
 

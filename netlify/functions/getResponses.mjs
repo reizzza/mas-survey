@@ -55,9 +55,7 @@ function unflatten(o) {
   };
 }
 
-let _sheet = null;
 async function getSheet() {
-  if (_sheet) return _sheet;
   const auth = new JWT({
     email: process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL,
     key: (process.env.GOOGLE_PRIVATE_KEY || "").replace(/\\n/g, "\n"),
@@ -67,7 +65,6 @@ async function getSheet() {
   await doc.loadInfo();
   const sheet = doc.sheetsByIndex[0];
   await sheet.loadHeaderRow().catch(() => {});
-  _sheet = sheet;
   return sheet;
 }
 
