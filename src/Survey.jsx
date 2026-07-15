@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 
 /* =========================================================================
  *  MAS 정당성 인식 연구 — 설문 툴 프로토타입
@@ -29,6 +29,13 @@ const T = {
   font: "'Pretendard','Apple SD Gothic Neo',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif",
 };
 
+/* 페이지 전환 시 항상 최상단부터 보이도록 (페인트 전에 즉시 이동) */
+function scrollTop() {
+  window.scrollTo(0, 0);
+  if (document.documentElement) document.documentElement.scrollTop = 0;
+  if (document.body) document.body.scrollTop = 0;
+}
+
 /* ---------------------------------------------------------------- 스텝 정의 */
 const STEPS = [
   "start", "consent",
@@ -36,7 +43,7 @@ const STEPS = [
   "assign",
   "preSurvey",
   "scene1", "scene2", "scene3", "scene4",
-  "contextChecks",
+  "postSurvey",
   "done",
 ];
 
@@ -60,19 +67,20 @@ const PRE_SURVEY_LIKERT = [
 
 const GENDER_OPTS = ["여성", "남성", "응답하지 않음"];
 const EDU_OPTS = ["고졸 이하", "대학 재학", "대학 졸업", "대학원 이상"];
+const JOB_OPTS = ["학생", "직장인", "자영업·프리랜서", "전업주부", "무직·구직 중", "기타"];
 
 /* ---------------------------------------------------------------- Context Checks */
-const CONTEXT_CHECKS = [
-  { id: "CXT1", text: "이 상황에서는 개인적 관계와 상대에 대한 배려가 중요하게 느껴졌다." },
-  { id: "CXT2", text: "이 상황에서는 역할, 책임, 업무상 기준이 중요하게 느껴졌다." },
-  { id: "CXT3", text: "이 상황에서는 공공 자원이나 기회의 공정한 배분이 중요하게 느껴졌다." },
+const POST_SURVEY = [
+  { id: "POST_CXT1", text: "이 상황에서는 개인적 관계와 상대에 대한 배려가 중요하게 느껴졌다.", anchors: LIKERT_7 },
+  { id: "POST_CXT2", text: "이 상황에서는 역할, 책임, 업무상 기준이 중요하게 느껴졌다.", anchors: LIKERT_7 },
+  { id: "POST_CXT3", text: "이 상황에서는 공공 자원이나 기회의 공정한 배분이 중요하게 느껴졌다.", anchors: LIKERT_7 },
 ];
 
 /* ---------------------------------------------------------------- 용어 정의 (툴팁 공용) */
 const TERMS = {
   "My Agent": "당신의 상황과 입장을 대신 설명하고 제안하는 AI",
   "Other Agent": "상대방의 상황과 입장을 대신 설명하고 제안하는 AI",
-  "Mediator Agent": "두 에이전트의 제안을 비교하고 최종 판단을 제시하는 AI",
+  "Mediator Agent": "두 에이전트의 제안을 비교하고 최종 판단을 제시하는 중재자 AI",
 };
 
 /* ----------------------------------------------------------------------------
@@ -286,7 +294,7 @@ function LikertRow({ item, value, onChange }) {
         })}
       </div>
       <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 12, color: T.sub }}>
-        <span>{item.anchors.min}</span><span>{item.anchors.max}</span>
+        <span>{item.anchors?.min ?? ""}</span><span>{item.anchors?.max ?? ""}</span>
       </div>
     </div>
   );
@@ -358,7 +366,7 @@ function TermTooltip({ term, onOpen }) {
 /* ============================================================ 화면별 본문 */
 
 function StartBody({ next }) {
-  const notes = ["응답은 모두 익명으로 처리됩니다", "정답은 없으니 직관적으로 답해 주세요", "언제든 그만두실 수 있어요", "결과는 학술 연구에만 사용됩니다"];
+  const notes = ["응답은 모두 익명으로 처리됩니다", "정답은 없으니 직관적으로 떠오르는 것을 답해주세요", "언제든 그만두실 수 있어요", "결과는 학술 연구에만 사용됩니다"];
   return (
     <StepShell
       label="시작 전"
@@ -388,8 +396,6 @@ function StartBody({ next }) {
 
 /* 동의서 본문 — 문단 단위 (소요시간만 채움, 나머지 [ ]는 연구자 입력 자리) */
 const CONSENT_PARAGRAPHS = [
-  "안녕하세요. 본 연구는 다중 AI 에이전트가 사용자를 대신해 의견을 제시하거나, 에이전트 간 의견 차이가 조정되는 상황에서 사람들이 최종 결과를 어떻게 평가하는지 알아보기 위한 연구입니다.",
-  "본 연구에 참여하시면, 여러 개의 가상 시나리오를 읽고 각 상황에서 제시된 최종 결과에 대해 설문에 응답하시게 됩니다. 각 시나리오에는 사용자를 대신해 제안하는 My Agent, 상대방을 대신해 제안하는 Other Agent, 그리고 경우에 따라 두 제안을 비교하고 최종 판단을 제시하는 Mediator Agent가 등장합니다. 참가자께서는 제시된 상황과 최종 결과를 바탕으로, 그 결과가 얼마나 정당하게 느껴지는지, 받아들일 수 있는지, 각 AI 에이전트가 어떻게 느껴지는지 등을 평가하게 됩니다.",
   "본 연구의 예상 소요 시간은 약 15–20분입니다. 설문 종료 후 일부 참가자에게는 추가 인터뷰 참여를 요청드릴 수 있습니다.",
   "본 연구는 학술 연구 목적으로만 수행됩니다. 수집되는 자료는 익명으로 처리되며, 연구 목적 외의 용도로 사용되지 않습니다. 응답 자료에는 이름, 주민등록번호, 연락처 등 직접적인 개인 식별 정보가 포함되지 않습니다. 단, 인터뷰 참여 의사를 밝히는 경우 연락을 위한 정보가 별도로 수집될 수 있으며, 해당 정보는 설문 응답 자료와 분리하여 보관됩니다.",
   "본 연구 참여로 인해 예상되는 신체적 위험은 없습니다. 다만 일부 시나리오에서 불공정하거나 불리한 결과를 접하는 상황이 제시될 수 있어 일시적인 불편감이 있을 수 있습니다. 불편함을 느끼는 경우 언제든지 응답을 중단할 수 있습니다.",
@@ -623,7 +629,7 @@ function AssignBody({ next, prev, data, set }) {
 function PreSurveyBody({ next, prev, data, set }) {
   const r = data.preSurvey || {};
   const setItem = (id, v) => set({ preSurvey: { ...r, [id]: v } });
-  const demoOk = r.DEM1 && r.DEM2 && r.DEM3;
+  const demoOk = r.DEM1 && r.DEM2 && r.DEM3 && r.DEM4;
   const likertOk = PRE_SURVEY_LIKERT.every((i) => r[i.id]);
   return (
     <StepShell label="사전 조사" title={"먼저 몇 가지를\n여쭤볼게요"}
@@ -635,15 +641,16 @@ function PreSurveyBody({ next, prev, data, set }) {
       {/* Demographics */}
       <div style={{ height: 1, background: T.line, margin: "8px 0 28px" }} />
       <div style={{ marginBottom: 24 }}>
-        <div style={{ fontSize: 16, fontWeight: 500, color: T.ink, marginBottom: 10 }}>연령</div>
+        <div style={{ fontSize: 16, fontWeight: 500, color: T.ink, marginBottom: 10 }}>연령 (만 나이)</div>
         <input inputMode="numeric" value={r.DEM1 || ""} onChange={(e) => setItem("DEM1", e.target.value.replace(/\D/g, ""))}
-          placeholder="예: 27" style={{
+          placeholder="만 나이로 입력해 주세요 (예: 27)" style={{
             width: "100%", padding: "14px 16px", fontSize: 16, fontFamily: T.font, color: T.ink,
             border: `1.5px solid ${T.line}`, borderRadius: 12, boxSizing: "border-box", outline: "none",
           }} />
       </div>
       <ChoiceBlock label="성별" opts={GENDER_OPTS} value={r.DEM2} onChange={(v) => setItem("DEM2", v)} />
-      <ChoiceBlock label="직업 또는 학력" opts={EDU_OPTS} value={r.DEM3} onChange={(v) => setItem("DEM3", v)} />
+      <ChoiceBlock label="학력" opts={EDU_OPTS} value={r.DEM3} onChange={(v) => setItem("DEM3", v)} />
+      <ChoiceBlock label="직업" opts={JOB_OPTS} value={r.DEM4} onChange={(v) => setItem("DEM4", v)} />
     </StepShell>
   );
 }
@@ -683,7 +690,7 @@ function VignetteImage({ src, label }) {
   );
 }
 
-function SceneBody({ conditionCode, index, next, prev, data, set, onTooltip }) {
+function SceneBody({ conditionCode, index, next, prev, data, set, onTooltip, initialSub = 0 }) {
   const cond = CONDITIONS[conditionCode];
   const scene = SCENE_TEXT[conditionCode];
   const imgset = IMAGES_BY_CONTEXT[data.context] || IMG_PERSONAL;
@@ -691,7 +698,8 @@ function SceneBody({ conditionCode, index, next, prev, data, set, onTooltip }) {
   const resultImg = imgset["result" + conditionCode];
   const key = `cond_${conditionCode}`;
   const r = data.scenes?.[key]?.answers || {};
-  const [sub, setSub] = useState(0); // 0:살펴보기(상황~충돌)  1:결과  2:평가
+  const [sub, setSub] = useState(initialSub); // 0:살펴보기(상황~충돌)  1:결과  2:평가
+  useLayoutEffect(() => { scrollTop(); }, [sub]);
 
   const itemIds = surveyForCondition(conditionCode);
   const mcStart = itemIds.indexOf("MC1");
@@ -778,39 +786,32 @@ function SceneBody({ conditionCode, index, next, prev, data, set, onTooltip }) {
   );
 }
 
-function ContextChecksBody({ next, prev, data, set }) {
-  const r = data.contextChecks || {};
-  const setItem = (id, v) => set({ contextChecks: { ...r, [id]: v } });
-  const ok = CONTEXT_CHECKS.every((i) => r[i.id]);
+function PostSurveyBody({ next, prev, data, set }) {
+  const r = data.postSurvey || {};
+  const setItem = (id, v) => set({ postSurvey: { ...r, [id]: v } });
+  const ok = POST_SURVEY.every((i) => r[i.id]);
+  const imgset = IMAGES_BY_CONTEXT[data.context] || IMG_PERSONAL;
   return (
     <StepShell label="마무리" title={"마지막으로\n여쭤볼게요"}
       footer={<><PrimaryButton disabled={!ok} onClick={next}>제출하기</PrimaryButton><GhostButton onClick={prev}>이전</GhostButton></>}>
-      <p style={{ fontSize: 15, color: T.body, lineHeight: 1.6, marginBottom: 24 }}>
-        앞서 본 상황들을 떠올리며, 각 문장에 얼마나 동의하는지 답해 주세요.
+      <p style={{ fontSize: 15, color: T.body, lineHeight: 1.6, marginBottom: 20 }}>
+        앞서 본 상황을 다시 보여드릴게요. 이 상황을 떠올리며 각 문장에 얼마나 동의하는지 답해 주세요.
       </p>
-      {CONTEXT_CHECKS.map((item) => <LikertRow key={item.id} item={item} value={r[item.id]} onChange={(v) => setItem(item.id, v)} />)}
+      {imgset.stage.map((src, i) => (
+        <VignetteImage key={i} src={src} label={`상황 이미지 ${i + 1}`} />
+      ))}
+      <div style={{ height: 1, background: T.line, margin: "8px 0 24px" }} />
+      {POST_SURVEY.map((item) => <LikertRow key={item.id} item={item} value={r[item.id]} onChange={(v) => setItem(item.id, v)} />)}
     </StepShell>
   );
 }
 
-function DoneBody({ data }) {
+function DoneBody() {
   return (
     <StepShell label="완료" title={"조사가\n완료되었습니다"}>
-      <p style={{ fontSize: 16, color: T.body, lineHeight: 1.7, marginBottom: 28 }}>
-        소중한 응답에 감사드립니다. 본 조사는 다중 에이전트 시스템에서 사람이 AI의 판단을 어떻게 정당한 것으로
-        받아들이는지에 대한 학술 연구입니다.
+      <p style={{ fontSize: 16, color: T.body, lineHeight: 1.7, margin: 0 }}>
+        소중한 응답에 감사드립니다.
       </p>
-      <div style={{ background: T.bgGray, borderRadius: 14, padding: "18px 20px" }}>
-        <div style={{ fontSize: 12, color: T.sub, marginBottom: 6 }}>응답 ID</div>
-        <div style={{ fontSize: 15, color: T.ink, fontWeight: 600, fontFamily: "monospace", wordBreak: "break-all" }}>{data.participantId}</div>
-      </div>
-      {/* 개발용: 수집 데이터 미리보기 */}
-      <details style={{ marginTop: 20 }}>
-        <summary style={{ fontSize: 13, color: T.sub, cursor: "pointer" }}>수집된 데이터 보기 (개발용)</summary>
-        <pre style={{ fontSize: 11, background: T.cardGray, padding: 14, borderRadius: 10, overflow: "auto", color: T.body, marginTop: 10 }}>
-          {JSON.stringify(data, null, 2)}
-        </pre>
-      </details>
     </StepShell>
   );
 }
@@ -819,11 +820,12 @@ function DoneBody({ data }) {
 
 export default function App() {
   const [stepIdx, setStepIdx] = useState(0);
+  const [participantCode, setParticipantCode] = useState(null);
   const [data, setData] = useState(() => ({
     participantId: "id_" + Math.random().toString(36).slice(2, 10),
     contextLabel: null,   // 화면 표시용 A/B/C (맥락)
     context: null,        // 저장용 personal/workplace/public
-    consent: {}, comprehension: {}, preSurvey: {}, scenes: {}, contextChecks: {},
+    consent: {}, comprehension: {}, preSurvey: {}, scenes: {}, postSurvey: {},
     meta: { startedAt: Date.now(), tooltipOpens: [] },
   }));
 
@@ -838,12 +840,17 @@ export default function App() {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ participantId: data.participantId, step, data }),
-    }).catch(() => {});
+    })
+      .then((r) => r.json())
+      .then((j) => { if (j && j.participantCode) setParticipantCode(j.participantCode); })
+      .catch(() => {});
   };
+  useLayoutEffect(() => { scrollTop(); }, [stepIdx]);
   useEffect(() => { if (stepIdx > 0) saveProgress(STEPS[stepIdx]); }, [stepIdx]);
 
-  const next = () => setStepIdx((i) => Math.min(i + 1, STEPS.length - 1));
-  const prev = () => setStepIdx((i) => Math.max(i - 1, 0));
+  const [navDir, setNavDir] = useState("forward");
+  const next = () => { setNavDir("forward"); setStepIdx((i) => Math.min(i + 1, STEPS.length - 1)); };
+  const prev = () => { setNavDir("back"); setStepIdx((i) => Math.max(i - 1, 0)); };
   const step = STEPS[stepIdx];
 
   let body;
@@ -856,10 +863,10 @@ export default function App() {
   else if (step.startsWith("scene")) {
     const idx = Number(step.replace("scene", "")) - 1;
     const code = CONDITION_ORDER[idx];
-    body = <SceneBody key={code} conditionCode={code} index={idx} next={next} prev={prev} data={data} set={set} onTooltip={onTooltip} />;
+    body = <SceneBody key={code} initialSub={navDir === "back" ? 2 : 0} conditionCode={code} index={idx} next={next} prev={prev} data={data} set={set} onTooltip={onTooltip} />;
   }
-  else if (step === "contextChecks") body = <ContextChecksBody next={next} prev={prev} data={data} set={set} />;
-  else if (step === "done") body = <DoneBody data={data} />;
+  else if (step === "postSurvey") body = <PostSurveyBody next={next} prev={prev} data={data} set={set} />;
+  else if (step === "done") body = <DoneBody />;
 
   /* 진행률 (intro/done 제외 구간) */
   const progress = Math.round((stepIdx / (STEPS.length - 1)) * 100);
