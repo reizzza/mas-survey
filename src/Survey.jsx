@@ -366,7 +366,7 @@ function TermTooltip({ term, onOpen }) {
 /* ============================================================ 화면별 본문 */
 
 function StartBody({ next }) {
-  const notes = ["응답은 모두 익명으로 처리됩니다", "정답은 없으니 직관적으로 떠오르는 것을 답해주세요", "언제든 그만두실 수 있어요", "결과는 학술 연구에만 사용됩니다"];
+  const notes = ["응답은 연구 목적으로만 사용됩니다", "정답은 없으니 직관적으로 떠오르는 것을 답해주세요", "언제든 그만두실 수 있어요", "결과는 학술 연구에만 사용됩니다"];
   return (
     <StepShell
       label="시작 전"
@@ -397,9 +397,10 @@ function StartBody({ next }) {
 /* 동의서 본문 — 문단 단위 (소요시간만 채움, 나머지 [ ]는 연구자 입력 자리) */
 const CONSENT_PARAGRAPHS = [
   "본 연구의 예상 소요 시간은 약 15–20분입니다. 설문 종료 후 일부 참가자에게는 추가 인터뷰 참여를 요청드릴 수 있습니다.",
-  "본 연구는 학술 연구 목적으로만 수행됩니다. 수집되는 자료는 익명으로 처리되며, 연구 목적 외의 용도로 사용되지 않습니다. 응답 자료에는 이름, 주민등록번호, 연락처 등 직접적인 개인 식별 정보가 포함되지 않습니다. 단, 인터뷰 참여 의사를 밝히는 경우 연락을 위한 정보가 별도로 수집될 수 있으며, 해당 정보는 설문 응답 자료와 분리하여 보관됩니다.",
+  "본 연구는 학술 연구 목적으로만 수행되며, 수집된 자료는 연구 목적 외의 용도로 사용되지 않습니다. 본 연구에서는 추가 인터뷰 대상자 선정 및 연락을 위해 이름과 연락처를 수집하며, 이는 설문 응답과 함께 저장됩니다. 수집된 자료는 연구진만 접근할 수 있는 공간에 안전하게 보관되며, 주민등록번호 등 그 밖의 민감한 개인정보는 수집하지 않습니다.",
+  "[개인정보 수집·이용 안내] 수집 항목은 이름, 연락처, 연령, 성별, 학력, 직업 및 설문 응답입니다. 수집 목적은 학술 연구 분석과 추가 인터뷰 대상자 선정·연락이며, 수집된 개인정보는 연구 종료 후 3년 또는 IRB 기준에 따른 기간 동안 보관한 뒤 폐기됩니다. 개인정보 수집·이용에 동의하지 않으실 수 있으나, 이 경우 본 연구에 참여하실 수 없습니다.",
   "본 연구 참여로 인해 예상되는 신체적 위험은 없습니다. 다만 일부 시나리오에서 불공정하거나 불리한 결과를 접하는 상황이 제시될 수 있어 일시적인 불편감이 있을 수 있습니다. 불편함을 느끼는 경우 언제든지 응답을 중단할 수 있습니다.",
-  "연구 참여는 전적으로 자발적입니다. 참여를 원하지 않으시면 설문을 시작하지 않아도 되며, 참여 중에도 언제든지 중단하실 수 있습니다. 참여를 거부하거나 중단하더라도 어떠한 불이익도 없습니다. 단, 설문 제출 이후에는 응답이 익명화되어 특정 개인의 자료를 식별하거나 삭제하기 어려울 수 있습니다.",
+  "연구 참여는 전적으로 자발적입니다. 참여를 원하지 않으시면 설문을 시작하지 않아도 되며, 참여 중에도 언제든지 중단하실 수 있습니다. 참여를 거부하거나 중단하더라도 어떠한 불이익도 없습니다. 설문 제출 이후에도 아래 연구자 연락처로 요청하시면 본인의 자료를 삭제해 드립니다.",
   "수집된 자료는 연구 분석 및 학술 발표, 논문 작성에 활용될 수 있습니다. 연구 결과는 개인을 식별할 수 없는 집계된 형태로만 보고됩니다. 자료는 연구 종료 후 3년 또는 IRB 기준에 따른 기간 동안 안전하게 보관한 뒤 폐기됩니다.",
 ];
 
@@ -412,24 +413,18 @@ const CONSENT_CONTACT = [
 
 const CONSENT_CHECKS = [
   { k: "c1", label: "나는 본 연구의 목적, 절차, 예상 소요 시간, 개인정보 처리 방식, 참여 중단 가능성에 대한 설명을 읽고 이해했습니다." },
-  { k: "c2", label: "나는 연구 참여가 자발적이며, 언제든지 중단할 수 있음을 이해했습니다." },
+  { k: "c4", label: "나는 이름·연락처 등 개인정보의 수집·이용에 동의합니다." },
   { k: "c3", label: "나는 본 연구에 참여하는 것에 동의합니다." },
 ];
 
 function ConsentBody({ next, prev, data, set }) {
   const cs = data.consent || {};
   const toggle = (k) => set({ consent: { ...cs, [k]: !cs[k] } });
-  const setChoice = (v) => set({ consent: { ...cs, choice: v } });
   const allChecked = CONSENT_CHECKS.every((c) => cs[c.k]);
-  const canProceed = allChecked && cs.choice === "yes";
 
   return (
     <StepShell label="동의" title={"연구 참여 안내 및\n동의서"}
-      footer={
-        cs.choice === "no"
-          ? <GhostButton onClick={() => setChoice(null)}>다시 선택</GhostButton>
-          : <><PrimaryButton disabled={!canProceed} onClick={next}>다음</PrimaryButton><GhostButton onClick={prev}>이전</GhostButton></>
-      }>
+      footer={<><PrimaryButton disabled={!allChecked} onClick={next}>다음</PrimaryButton><GhostButton onClick={prev}>이전</GhostButton></>}>
       {/* 안내 본문 */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         {CONSENT_PARAGRAPHS.map((p, i) => (
@@ -475,35 +470,6 @@ function ConsentBody({ next, prev, data, set }) {
         })}
       </div>
 
-      {/* 참여 여부 단일선택 */}
-      <SectionLabel>참여 여부를 선택해 주세요</SectionLabel>
-      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-        {[
-          { v: "yes", mark: "①", label: "위 내용을 읽고 연구 참여에 동의합니다.", disabled: !allChecked },
-          { v: "no", mark: "②", label: "연구 참여에 동의하지 않습니다.", disabled: false },
-        ].map((o) => {
-          const on = cs.choice === o.v;
-          return (
-            <button key={o.v} disabled={o.disabled} onClick={() => setChoice(o.v)} style={{
-              textAlign: "left", padding: "16px 18px", borderRadius: 12, fontFamily: T.font,
-              border: on ? `1.5px solid ${T.blue}` : `1.5px solid ${T.line}`,
-              background: on ? T.blueSoft : T.white,
-              color: o.disabled ? "#C9CDD2" : on ? T.blue : T.body,
-              fontSize: 15, fontWeight: 500, cursor: o.disabled ? "default" : "pointer", lineHeight: 1.5,
-            }}>{o.mark} {o.label}</button>
-          );
-        })}
-      </div>
-      {!allChecked && (
-        <p style={{ fontSize: 13, color: T.sub, marginTop: 12 }}>위 세 항목을 모두 확인하셔야 참여에 동의하실 수 있어요.</p>
-      )}
-      {cs.choice === "no" && (
-        <div style={{ background: "#FFF4F4", borderRadius: 12, padding: "16px 18px", marginTop: 16 }}>
-          <p style={{ fontSize: 14, color: T.red, margin: 0, lineHeight: 1.6, fontWeight: 500 }}>
-            참여에 동의하지 않으셨습니다. 설문을 진행하지 않으며, 창을 닫으셔도 됩니다. 참여를 원하시면 다시 선택을 눌러 주세요.
-          </p>
-        </div>
-      )}
     </StepShell>
   );
 }
@@ -629,7 +595,7 @@ function AssignBody({ next, prev, data, set }) {
 function PreSurveyBody({ next, prev, data, set }) {
   const r = data.preSurvey || {};
   const setItem = (id, v) => set({ preSurvey: { ...r, [id]: v } });
-  const demoOk = r.DEM1 && r.DEM2 && r.DEM3 && r.DEM4;
+  const demoOk = r.NAME && r.CONTACT && r.DEM1 && r.DEM2 && r.DEM3 && r.DEM4;
   const likertOk = PRE_SURVEY_LIKERT.every((i) => r[i.id]);
   return (
     <StepShell label="사전 조사" title={"먼저 몇 가지를\n여쭤볼게요"}
@@ -640,6 +606,25 @@ function PreSurveyBody({ next, prev, data, set }) {
 
       {/* Demographics */}
       <div style={{ height: 1, background: T.line, margin: "8px 0 28px" }} />
+      <p style={{ fontSize: 13, color: T.sub, lineHeight: 1.6, marginBottom: 20 }}>
+        이름과 연락처는 추가 인터뷰 대상자 선정 및 연락에만 사용됩니다.
+      </p>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 16, fontWeight: 500, color: T.ink, marginBottom: 10 }}>이름</div>
+        <input value={r.NAME || ""} onChange={(e) => setItem("NAME", e.target.value)}
+          placeholder="이름을 입력해 주세요" style={{
+            width: "100%", padding: "14px 16px", fontSize: 16, fontFamily: T.font, color: T.ink,
+            border: `1.5px solid ${T.line}`, borderRadius: 12, boxSizing: "border-box", outline: "none",
+          }} />
+      </div>
+      <div style={{ marginBottom: 24 }}>
+        <div style={{ fontSize: 16, fontWeight: 500, color: T.ink, marginBottom: 10 }}>연락처</div>
+        <input inputMode="tel" value={r.CONTACT || ""} onChange={(e) => setItem("CONTACT", e.target.value)}
+          placeholder="010-0000-0000" style={{
+            width: "100%", padding: "14px 16px", fontSize: 16, fontFamily: T.font, color: T.ink,
+            border: `1.5px solid ${T.line}`, borderRadius: 12, boxSizing: "border-box", outline: "none",
+          }} />
+      </div>
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 16, fontWeight: 500, color: T.ink, marginBottom: 10 }}>연령 (만 나이)</div>
         <input inputMode="numeric" value={r.DEM1 || ""} onChange={(e) => setItem("DEM1", e.target.value.replace(/\D/g, ""))}
@@ -730,10 +715,17 @@ function SceneBody({ conditionCode, index, next, prev, data, set, onTooltip, ini
       <StepShell label={`상황 ${index + 1} / 4`} title={`상황 ${index + 1}`}
         footer={<><PrimaryButton onClick={() => setSub(1)}>결과 보기</PrimaryButton><GhostButton onClick={prev}>이전</GhostButton></>}>
         {intro.length > 0 && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 24 }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: 12, marginBottom: 16 }}>
             {intro.map((p, i) => (
               <p key={i} style={{ fontSize: 15, lineHeight: 1.7, color: T.body, margin: 0 }}>{p}</p>
             ))}
+          </div>
+        )}
+        {cond.mediator && (
+          <div style={{ background: T.bgGray, borderRadius: 12, padding: "14px 16px", marginBottom: 24 }}>
+            <p style={{ fontSize: 15, lineHeight: 1.7, color: T.ink, margin: 0, fontWeight: 500 }}>
+              이번 상황에서는 두 에이전트의 제안을 비교하고 최종 판단을 제시하는 중재자 AI가 등장합니다.
+            </p>
           </div>
         )}
         {stageImgs.map((src, i) => (

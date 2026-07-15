@@ -38,7 +38,7 @@ function unflatten(o) {
     }
   }
   const pre = {};
-  ["AIEXP1","AIEXP2","PRE_TR1","PRE_TR2","PRE_ID1","PRE_ID2","PRE_ID3","PRE_ID4","PRE_ID5","DEM1","DEM2","DEM3","DEM4"]
+  ["NAME","CONTACT","AIEXP1","AIEXP2","PRE_TR1","PRE_TR2","PRE_ID1","PRE_ID2","PRE_ID3","PRE_ID4","PRE_ID5","DEM1","DEM2","DEM3","DEM4"]
     .forEach((it) => { if (o[it] !== "" && o[it] != null) pre[it] = num(o[it]); });
   return {
     participantId: o.participantId,

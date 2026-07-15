@@ -16,14 +16,14 @@ const COND_ITEMS = {
   C2: ["LEG1","LEG2","LEG3","ACC1","ACC2","ACC3","REP1","REP2","REP3","REP4","MED1","MED2","MED3","EMO1","EMO2","EMO3","EMO4","ATTR_C2_1","ATTR_C2_2","MC1","MC2","MC3"],
 };
 
-const PRE_ITEMS = ["AIEXP1","AIEXP2","PRE_TR1","PRE_TR2","PRE_ID1","PRE_ID2","PRE_ID3","PRE_ID4","PRE_ID5","DEM1","DEM2","DEM3","DEM4"];
+const PRE_ITEMS = ["NAME","CONTACT","AIEXP1","AIEXP2","PRE_TR1","PRE_TR2","PRE_ID1","PRE_ID2","PRE_ID3","PRE_ID4","PRE_ID5","DEM1","DEM2","DEM3","DEM4"];
 const POST_ITEMS = ["POST_CXT1","POST_CXT2","POST_CXT3"];
 
 function buildHeaders() {
   const h = [
     "participantId", "participantCode", "updatedAt", "step", "completed",
     "contextLabel", "context", "comprehension_correct", "comprehension_selected",
-    "consent_c1", "consent_c2", "consent_c3", "consent_choice",
+    "consent_c1", "consent_c3", "consent_c4",
     ...PRE_ITEMS,
   ];
   for (const c of COND_ORDER) {
@@ -47,9 +47,8 @@ function flatten(participantId, step, data) {
     comprehension_correct: d.comprehension?.correct === true ? 1 : (d.comprehension?.correct === false ? 0 : ""),
     comprehension_selected: d.comprehension?.selected ?? "",
     consent_c1: d.consent?.c1 ? 1 : "",
-    consent_c2: d.consent?.c2 ? 1 : "",
     consent_c3: d.consent?.c3 ? 1 : "",
-    consent_choice: d.consent?.choice ?? "",
+    consent_c4: d.consent?.c4 ? 1 : "",
     startedAt: d.meta?.startedAt ?? "",
   };
   for (const it of PRE_ITEMS) row[it] = d.preSurvey?.[it] ?? "";
