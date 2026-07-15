@@ -78,11 +78,25 @@ export const handler = async (event) => {
     return json(401, { error: "unauthorized" });
   }
   try {
+    // 환경변수 상태 점검 (값은 노출하지 않고 형식만 로그로 남김)
+    const pk = process.env.GOOGLE_PRIVATE_KEY || "";
+    console.log("[ENV CHECK]", JSON.stringify({
+      SHEET_ID_길이: (process.env.SHEET_ID || "").length,
+      SHEET_ID_에_URL포함: (process.env.SHEET_ID || "").includes("http"),
+      EMAIL_형식정상: (process.env.GOOGLE_SERVICE_ACCOUNT_EMAIL || "").includes("iam.gserviceaccount.com"),
+      KEY_BEGIN으로시작: pk.trim().startsWith("-----BEGIN"),
+      KEY_따옴표로시작: pk.trim().startsWith('"'),
+      KEY_길이: pk.length,
+      KEY_개행문자포함: pk.includes("\\n"),
+      KEY_실제줄바꿈포함: pk.includes("\n"),
+    }));
     const sheet = await getSheet();
     const rows = await sheet.getRows();
     const responses = rows.map((r) => unflatten(r.toObject())).filter((x) => x.participantId);
     return json(200, { responses });
   } catch (e) {
+    console.error("[GETRESPONSES ERROR]", e?.message || e);
+    if (e?.stack) console.error(e.stack);
     return json(500, { error: String(e?.message || e) });
   }
 };

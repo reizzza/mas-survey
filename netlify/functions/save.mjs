@@ -124,6 +124,8 @@ export const handler = async (event) => {
     }
     return json(200, { ok: true, participantCode });
   } catch (e) {
+    console.error("[SAVE ERROR]", e?.message || e);
+    if (e?.stack) console.error(e.stack);
     return json(500, { error: String(e?.message || e) });
   }
 };

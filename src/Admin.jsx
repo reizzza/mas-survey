@@ -408,7 +408,11 @@ export default function AdminPage() {
   const fetchResponses = async (pw) => {
     const res = await fetch("/.netlify/functions/getResponses", { headers: { "x-admin-key": pw } });
     if (res.status === 401) throw new Error("비밀번호가 올바르지 않습니다.");
-    if (!res.ok) throw new Error("데이터를 불러오지 못했습니다.");
+    if (!res.ok) {
+      // 서버가 돌려준 실제 원인을 그대로 노출 (SHEET_ID / 시트 공유 / KEY 형식 진단용)
+      const body = await res.json().catch(() => ({}));
+      throw new Error(body.error ? `서버 오류: ${body.error}` : "데이터를 불러오지 못했습니다.");
+    }
     const { responses } = await res.json();
     return responses || [];
   };
